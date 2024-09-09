@@ -34,6 +34,8 @@
     <canvas id="chart"></canvas>
 
     <script>
+        let chart = null;
+
         document.getElementById('simulation-form').addEventListener('submit', function(event) {
             event.preventDefault();
 
@@ -50,7 +52,14 @@
             .then(response => response.json())
             .then(data => {
                 const ctx = document.getElementById('chart').getContext('2d');
-                const chart = new Chart(ctx, {
+
+                // Destruir el gráfico anterior si existe
+                if (chart) {
+                    chart.destroy();
+                }
+
+                // Crear un nuevo gráfico
+                chart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: data.tiempo,
