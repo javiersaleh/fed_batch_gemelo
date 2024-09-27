@@ -107,6 +107,11 @@
                                 title: {
                                     display: true,
                                     text: 'Tiempo (h)'
+                                },
+                                ticks: {
+                                    callback: function(value, index, values) {
+                                        return value.toFixed(1);  // Mostrar 1 decimal en el eje X
+                                    }
                                 }
                             },
                             y1: {  // Eje Y izquierdo
