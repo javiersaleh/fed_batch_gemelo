@@ -4,18 +4,16 @@ from scipy.integrate import odeint
 
 app = Flask(__name__)
 
-# Parámetros iniciales de la simulación
+# Parámetros fijos de la simulación
 k_La = 0.1  # s^-1
 C_O2_star = 8.0  # mg/L
 q_O2 = 0.5  # mg/(g·h)
 mu_max = 0.4  # h^-1
 K_S = 0.1  # g/L
-F = 0.05  # L/h
-S_in = 10  # g/L
-Y_xs = 0.5
+Y_xs = 0.5  # Rendimiento biomasa/sustrato
 
 # Función del modelo
-def modelo(y, t):
+def modelo(y, t, F, S_in):
     C_O2, X, S, V = y
     mu = mu_max * S / (K_S + S)
     dV_dt = F
@@ -39,13 +37,15 @@ def simulate():
     X = float(request.form['X'])
     S = float(request.form['S'])
     V = float(request.form['V'])
+    F = float(request.form['F'])  # Flujo de alimentación
+    S_in = float(request.form['S_in'])  # Concentración de sustrato en la alimentación
 
     # Condiciones iniciales
     y0 = [C_O2, X, S, V]
     t = np.linspace(tiempo_inicial, tiempo_final, 100)
 
     # Simulación
-    sol = odeint(modelo, y0, t)
+    sol = odeint(modelo, y0, t, args=(F, S_in))
 
     # Devolver los resultados como JSON
     resultados = {
