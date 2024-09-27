@@ -1,30 +1,32 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 import numpy as np
 from scipy.integrate import odeint
 
 app = Flask(__name__)
+app.secret_key = 'supersecretkey'  # Necesario para usar variables de sesión
 
 # Parámetros fijos de la simulación
 k_La = 0.1  # s^-1
 C_O2_star = 8.0  # Concentración de saturación de O2 en mg/L (valor estándar a 25°C)
 q_O2 = 0.5  # mg/(g·h)
 mu_max = 0.4  # h^-1
-K_S = 1  # g/L
-K_O2 = 1  # mg/L, constante de saturación de oxígeno
+K_S = 0.1  # g/L
 Y_xs = 0.5  # Rendimiento biomasa/sustrato
+
+# Almacenar la simulación previa
+@app.route('/reset', methods=['POST'])
+def reset_simulation():
+    session.clear()  # Limpiar los datos guardados
+    return jsonify({'status': 'simulación reseteada'})
 
 # Función del modelo
 def modelo(y, t, F, S_in):
     C_O2, X, S, V = y
-    
-    # Ecuación de crecimiento limitada por sustrato y oxígeno
-    mu = mu_max * (S / (K_S + S)) * (C_O2 / (K_O2 + C_O2))
-    
+    mu = mu_max * (S / (K_S + S))
     dV_dt = F
     dX_dt = mu * X - (F / V) * X
     dS_dt = - (mu / Y_xs) * X + (F / V) * (S_in - S)
     dC_O2_dt = k_La * (C_O2_star - C_O2) - q_O2 * X - (F / V) * C_O2
-    
     return [dC_O2_dt, dX_dt, dS_dt, dV_dt]
 
 # Ruta principal que carga la página inicial
@@ -38,33 +40,54 @@ def simulate():
     # Recibir datos del formulario HTML
     tiempo_inicial = float(request.form['tiempo_inicial'])
     tiempo_final = float(request.form['tiempo_final'])
-    C_O2_saturacion = float(request.form['C_O2'])  # O2 en porcentaje de saturación
+    C_O2 = float(request.form['C_O2'])
     X = float(request.form['X'])
     S = float(request.form['S'])
     V = float(request.form['V'])
     F = float(request.form['F'])  # Flujo de alimentación
     S_in = float(request.form['S_in'])  # Concentración de sustrato en la alimentación
 
-    # Convertir el O2 de porcentaje de saturación a mg/L
-    C_O2 = (C_O2_saturacion / 100) * C_O2_star
+    # Verificar si hay una simulación anterior guardada
+    if 'tiempo' in session:
+        tiempo_anterior = session['tiempo'][-1]  # Último tiempo simulado
+        if tiempo_inicial <= tiempo_anterior:
+            tiempo_inicial = tiempo_anterior  # Empezar desde el tiempo final anterior
+        condiciones_iniciales = [
+            session['O2'][-1],  # Último valor de O2
+            session['biomasa'][-1],  # Último valor de biomasa
+            session['sustrato'][-1],  # Último valor de sustrato
+            session['volumen'][-1]  # Último valor de volumen
+        ]
+    else:
+        # No hay simulación anterior: usar valores ingresados
+        condiciones_iniciales = [C_O2, X, S, V]
 
-    # Condiciones iniciales
-    y0 = [C_O2, X, S, V]
     t = np.linspace(tiempo_inicial, tiempo_final, 100)
 
     # Simulación
-    sol = odeint(modelo, y0, t, args=(F, S_in))
+    sol = odeint(modelo, condiciones_iniciales, t, args=(F, S_in))
 
-    # Convertir los valores de O2 disuelto de mg/L a porcentaje de saturación
-    O2_saturacion = (sol[:, 0] / C_O2_star) * 100
+    # Guardar los resultados en la sesión
+    if 'tiempo' in session:
+        session['tiempo'] += t.tolist()
+        session['O2'] += sol[:, 0].tolist()
+        session['biomasa'] += sol[:, 1].tolist()
+        session['sustrato'] += sol[:, 2].tolist()
+        session['volumen'] += sol[:, 3].tolist()
+    else:
+        session['tiempo'] = t.tolist()
+        session['O2'] = sol[:, 0].tolist()
+        session['biomasa'] = sol[:, 1].tolist()
+        session['sustrato'] = sol[:, 2].tolist()
+        session['volumen'] = sol[:, 3].tolist()
 
     # Devolver los resultados como JSON
     resultados = {
-        'tiempo': t.tolist(),
-        'O2': O2_saturacion.tolist(),  # Enviar O2 en porcentaje
-        'biomasa': sol[:, 1].tolist(),
-        'sustrato': sol[:, 2].tolist(),
-        'volumen': sol[:, 3].tolist()
+        'tiempo': session['tiempo'],
+        'O2': session['O2'],
+        'biomasa': session['biomasa'],
+        'sustrato': session['sustrato'],
+        'volumen': session['volumen']
     }
     return jsonify(resultados)
 
