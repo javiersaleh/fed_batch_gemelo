@@ -64,7 +64,7 @@
                     chart.destroy();
                 }
 
-                // Crear un nuevo gráfico
+                // Crear un nuevo gráfico con doble eje Y
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -74,25 +74,29 @@
                                 label: 'O2 Disuelto (% Saturación)',
                                 data: data.O2,
                                 borderColor: 'rgba(75, 192, 192, 1)',
-                                fill: false
+                                fill: false,
+                                yAxisID: 'y2'  // Asignar este dataset al eje Y derecho
                             },
                             {
                                 label: 'Biomasa (g/L)',
                                 data: data.biomasa,
                                 borderColor: 'rgba(0, 128, 0, 1)',
-                                fill: false
+                                fill: false,
+                                yAxisID: 'y1'  // Asignar al eje Y izquierdo
                             },
                             {
                                 label: 'Sustrato (g/L)',
                                 data: data.sustrato,
                                 borderColor: 'rgba(255, 165, 0, 1)',
-                                fill: false
+                                fill: false,
+                                yAxisID: 'y1'  // Asignar al eje Y izquierdo
                             },
                             {
                                 label: 'Volumen (L)',
                                 data: data.volumen,
                                 borderColor: 'rgba(255, 0, 0, 1)',
-                                fill: false
+                                fill: false,
+                                yAxisID: 'y1'  // Asignar al eje Y izquierdo
                             }
                         ]
                     },
@@ -105,10 +109,23 @@
                                     text: 'Tiempo (h)'
                                 }
                             },
-                            y: {
+                            y1: {  // Eje Y izquierdo
+                                type: 'linear',
+                                position: 'left',
                                 title: {
                                     display: true,
                                     text: 'Concentración / Volumen'
+                                }
+                            },
+                            y2: {  // Eje Y derecho
+                                type: 'linear',
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'O2 Disuelto (% Saturación)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false  // Esto evita que las líneas de cuadrícula se superpongan
                                 }
                             }
                         }
