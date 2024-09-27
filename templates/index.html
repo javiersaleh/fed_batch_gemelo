@@ -110,7 +110,7 @@
                                 },
                                 ticks: {
                                     callback: function(value, index, values) {
-                                        return value.toFixed(1);  // Mostrar 1 decimal en el eje X
+                                        return Number(value).toFixed(1);  // Asegurar que se muestre con 1 decimal sin multiplicar
                                     }
                                 }
                             },
