@@ -9,8 +9,8 @@ k_La = 0.1  # s^-1
 C_O2_star = 8.0  # Concentración de saturación de O2 en mg/L (valor estándar a 25°C)
 q_O2 = 0.5  # mg/(g·h)
 mu_max = 0.4  # h^-1
-K_S = 0.1  # g/L
-K_O2 = 0.1  # mg/L, constante de saturación de oxígeno
+K_S = 1  # g/L
+K_O2 = 1  # mg/L, constante de saturación de oxígeno
 Y_xs = 0.5  # Rendimiento biomasa/sustrato
 
 # Función del modelo
