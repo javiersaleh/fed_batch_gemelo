@@ -10,16 +10,21 @@ C_O2_star = 8.0  # Concentración de saturación de O2 en mg/L (valor estándar 
 q_O2 = 0.5  # mg/(g·h)
 mu_max = 0.4  # h^-1
 K_S = 0.1  # g/L
+K_O2 = 0.1  # mg/L, constante de saturación de oxígeno
 Y_xs = 0.5  # Rendimiento biomasa/sustrato
 
 # Función del modelo
 def modelo(y, t, F, S_in):
     C_O2, X, S, V = y
-    mu = mu_max * S / (K_S + S)
+    
+    # Ecuación de crecimiento limitada por sustrato y oxígeno
+    mu = mu_max * (S / (K_S + S)) * (C_O2 / (K_O2 + C_O2))
+    
     dV_dt = F
     dX_dt = mu * X - (F / V) * X
     dS_dt = - (mu / Y_xs) * X + (F / V) * (S_in - S)
     dC_O2_dt = k_La * (C_O2_star - C_O2) - q_O2 * X - (F / V) * C_O2
+    
     return [dC_O2_dt, dX_dt, dS_dt, dV_dt]
 
 # Ruta principal que carga la página inicial
