@@ -13,6 +13,15 @@ K_S = 1  # g/L
 K_O2 = 1  # mg/L, constante de saturación de oxígeno
 Y_xs = 0.5  # Rendimiento biomasa/sustrato
 
+# Guardar los resultados previos
+datos_guardados = {
+    'tiempo': [],
+    'O2': [],
+    'biomasa': [],
+    'sustrato': [],
+    'volumen': []
+}
+
 # Función del modelo
 def modelo(y, t, F, S_in):
     C_O2, X, S, V = y
@@ -35,6 +44,8 @@ def index():
 # Ruta que realiza la simulación y recibe datos del usuario
 @app.route('/simulate', methods=['POST'])
 def simulate():
+    global datos_guardados
+
     # Recibir datos del formulario HTML
     tiempo_inicial = float(request.form['tiempo_inicial'])
     tiempo_final = float(request.form['tiempo_final'])
@@ -48,8 +59,25 @@ def simulate():
     # Convertir el O2 de porcentaje de saturación a mg/L
     C_O2 = (C_O2_saturacion / 100) * C_O2_star
 
-    # Condiciones iniciales
-    y0 = [C_O2, X, S, V]
+    # Si ya hay datos previos y el tiempo inicial es mayor que 0, mantener datos hasta ese punto
+    if datos_guardados['tiempo']:
+        # Guardamos los datos previos hasta el tiempo inicial
+        indice_quiebre = np.argmax(np.array(datos_guardados['tiempo']) >= tiempo_inicial)
+        
+        # Usamos los últimos valores para continuar la simulación
+        y0 = [datos_guardados['O2'][indice_quiebre], 
+              datos_guardados['biomasa'][indice_quiebre], 
+              datos_guardados['sustrato'][indice_quiebre], 
+              datos_guardados['volumen'][indice_quiebre]]
+        
+        # Mantener los datos anteriores hasta el tiempo inicial
+        for key in datos_guardados:
+            datos_guardados[key] = datos_guardados[key][:indice_quiebre + 1]
+
+    else:
+        # Usar los valores ingresados por el usuario como condiciones iniciales
+        y0 = [C_O2, X, S, V]
+
     t = np.linspace(tiempo_inicial, tiempo_final, 100)
 
     # Simulación
@@ -58,15 +86,35 @@ def simulate():
     # Convertir los valores de O2 disuelto de mg/L a porcentaje de saturación
     O2_saturacion = (sol[:, 0] / C_O2_star) * 100
 
+    # Guardar los resultados actuales
+    datos_guardados['tiempo'] += t.tolist()
+    datos_guardados['O2'] += O2_saturacion.tolist()
+    datos_guardados['biomasa'] += sol[:, 1].tolist()
+    datos_guardados['sustrato'] += sol[:, 2].tolist()
+    datos_guardados['volumen'] += sol[:, 3].tolist()
+
     # Devolver los resultados como JSON
     resultados = {
-        'tiempo': t.tolist(),
-        'O2': O2_saturacion.tolist(),  # Enviar O2 en porcentaje
-        'biomasa': sol[:, 1].tolist(),
-        'sustrato': sol[:, 2].tolist(),
-        'volumen': sol[:, 3].tolist()
+        'tiempo': datos_guardados['tiempo'],
+        'O2': datos_guardados['O2'],
+        'biomasa': datos_guardados['biomasa'],
+        'sustrato': datos_guardados['sustrato'],
+        'volumen': datos_guardados['volumen']
     }
     return jsonify(resultados)
+
+# Ruta para resetear los datos
+@app.route('/reset', methods=['POST'])
+def reset_simulation():
+    global datos_guardados
+    datos_guardados = {
+        'tiempo': [],
+        'O2': [],
+        'biomasa': [],
+        'sustrato': [],
+        'volumen': []
+    }
+    return jsonify({'status': 'reset'})
 
 if __name__ == '__main__':
     app.run(debug=True)
