@@ -66,7 +66,19 @@
             })
             .then(response => response.json())
             .then(data => {
-                const ctx = document.getElementById('chart').getContext('2d');
+                const tiempo_inicial = parseFloat(formData.get('tiempo_inicial'));
+
+                // Encontrar el punto en el que eliminar datos previos a partir del nuevo tiempo inicial
+                const indexToRemove = previousData.tiempo.findIndex(t => t >= tiempo_inicial);
+
+                if (indexToRemove !== -1) {
+                    // Eliminar datos anteriores después del tiempo inicial
+                    previousData.tiempo = previousData.tiempo.slice(0, indexToRemove);
+                    previousData.O2 = previousData.O2.slice(0, indexToRemove);
+                    previousData.biomasa = previousData.biomasa.slice(0, indexToRemove);
+                    previousData.sustrato = previousData.sustrato.slice(0, indexToRemove);
+                    previousData.volumen = previousData.volumen.slice(0, indexToRemove);
+                }
 
                 // Concatenar los nuevos datos a los datos previos
                 previousData.tiempo = previousData.tiempo.concat(data.tiempo);
@@ -81,6 +93,7 @@
                 }
 
                 // Crear un nuevo gráfico con los datos acumulados
+                const ctx = document.getElementById('chart').getContext('2d');
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: {
