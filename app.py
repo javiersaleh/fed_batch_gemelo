@@ -58,12 +58,8 @@ def simulate():
     # Convertir el O2 de porcentaje de saturación a mg/L
     C_O2 = (C_O2_saturacion / 100) * C_O2_star
 
-    # Si ya se ha hecho una simulación previa, usar los valores finales como condiciones iniciales
-    if all(val is not None for val in valores_finales.values()):
-        y0 = [valores_finales['O2'], valores_finales['biomasa'], valores_finales['sustrato'], valores_finales['volumen']]
-    else:
-        # Usar los valores ingresados por el usuario como condiciones iniciales
-        y0 = [C_O2, X, S, V]
+    # Si hay una simulación previa, NO usamos el último valor de la simulación anterior
+    y0 = [C_O2, X, S, V]
 
     t = np.linspace(tiempo_inicial, tiempo_final, 100)
 
