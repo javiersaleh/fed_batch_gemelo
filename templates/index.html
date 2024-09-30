@@ -43,6 +43,13 @@
 
     <script>
         let chart = null;
+        let previousData = {
+            tiempo: [],
+            O2: [],
+            biomasa: [],
+            sustrato: [],
+            volumen: []
+        };
 
         document.getElementById('simulation-form').addEventListener('submit', function(event) {
             event.preventDefault();
@@ -61,6 +68,13 @@
             .then(data => {
                 const ctx = document.getElementById('chart').getContext('2d');
 
+                // Concatenar los nuevos datos a los datos previos
+                previousData.tiempo = previousData.tiempo.concat(data.tiempo);
+                previousData.O2 = previousData.O2.concat(data.O2);
+                previousData.biomasa = previousData.biomasa.concat(data.biomasa);
+                previousData.sustrato = previousData.sustrato.concat(data.sustrato);
+                previousData.volumen = previousData.volumen.concat(data.volumen);
+
                 // Destruir el gráfico anterior si existe
                 if (chart) {
                     chart.destroy();
@@ -70,32 +84,32 @@
                 chart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: data.tiempo,
+                        labels: previousData.tiempo,
                         datasets: [
                             {
                                 label: 'O2 Disuelto (% Saturación)',
-                                data: data.O2,
+                                data: previousData.O2,
                                 borderColor: 'rgba(75, 192, 192, 1)',
                                 fill: false,
                                 yAxisID: 'y2'  // Asignar este dataset al eje Y derecho
                             },
                             {
                                 label: 'Biomasa (g/L)',
-                                data: data.biomasa,
+                                data: previousData.biomasa,
                                 borderColor: 'rgba(0, 128, 0, 1)',
                                 fill: false,
                                 yAxisID: 'y1'  // Asignar este dataset al eje Y izquierdo
                             },
                             {
                                 label: 'Sustrato (g/L)',
-                                data: data.sustrato,
+                                data: previousData.sustrato,
                                 borderColor: 'rgba(255, 165, 0, 1)',
                                 fill: false,
                                 yAxisID: 'y1'  // Asignar este dataset al eje Y izquierdo
                             },
                             {
                                 label: 'Volumen (L)',
-                                data: data.volumen,
+                                data: previousData.volumen,
                                 borderColor: 'rgba(255, 0, 0, 1)',
                                 fill: false,
                                 yAxisID: 'y1'  // Asignar este dataset al eje Y izquierdo
@@ -144,6 +158,16 @@
             .then(response => response.json())
             .then(data => {
                 console.log(data.status);  // Mensaje de confirmación en la consola
+
+                // Resetear los datos anteriores
+                previousData = {
+                    tiempo: [],
+                    O2: [],
+                    biomasa: [],
+                    sustrato: [],
+                    volumen: []
+                };
+
                 if (chart) {
                     chart.destroy();  // Destruir el gráfico actual
                 }

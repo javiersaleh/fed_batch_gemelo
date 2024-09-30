@@ -6,20 +6,19 @@ app = Flask(__name__)
 
 # Parámetros fijos de la simulación
 k_La = 0.1  # s^-1
-C_O2_star = 8.0  # Concentración de saturación de O2 en mg/L (valor estándar a 25°C)
+C_O2_star = 8.0  # Concentración de saturación de O2 en mg/L
 q_O2 = 0.5  # mg/(g·h)
 mu_max = 0.4  # h^-1
 K_S = 1  # g/L
-K_O2 = 1  # mg/L, constante de saturación de oxígeno
+K_O2 = 1  # mg/L
 Y_xs = 0.5  # Rendimiento biomasa/sustrato
 
-# Guardar los resultados previos
-datos_guardados = {
-    'tiempo': [],
-    'O2': [],
-    'biomasa': [],
-    'sustrato': [],
-    'volumen': []
+# Guardar solo los valores finales de la simulación previa
+valores_finales = {
+    'O2': None,
+    'biomasa': None,
+    'sustrato': None,
+    'volumen': None
 }
 
 # Función del modelo
@@ -44,7 +43,7 @@ def index():
 # Ruta que realiza la simulación y recibe datos del usuario
 @app.route('/simulate', methods=['POST'])
 def simulate():
-    global datos_guardados
+    global valores_finales
 
     # Recibir datos del formulario HTML
     tiempo_inicial = float(request.form['tiempo_inicial'])
@@ -59,21 +58,9 @@ def simulate():
     # Convertir el O2 de porcentaje de saturación a mg/L
     C_O2 = (C_O2_saturacion / 100) * C_O2_star
 
-    # Si ya hay datos previos y el tiempo inicial es mayor que 0, mantener datos hasta ese punto
-    if datos_guardados['tiempo']:
-        # Guardamos los datos previos hasta el tiempo inicial
-        indice_quiebre = np.argmax(np.array(datos_guardados['tiempo']) >= tiempo_inicial)
-        
-        # Usamos los últimos valores para continuar la simulación
-        y0 = [datos_guardados['O2'][indice_quiebre], 
-              datos_guardados['biomasa'][indice_quiebre], 
-              datos_guardados['sustrato'][indice_quiebre], 
-              datos_guardados['volumen'][indice_quiebre]]
-        
-        # Mantener los datos anteriores hasta el tiempo inicial
-        for key in datos_guardados:
-            datos_guardados[key] = datos_guardados[key][:indice_quiebre + 1]
-
+    # Si ya se ha hecho una simulación previa, usar los valores finales como condiciones iniciales
+    if all(val is not None for val in valores_finales.values()):
+        y0 = [valores_finales['O2'], valores_finales['biomasa'], valores_finales['sustrato'], valores_finales['volumen']]
     else:
         # Usar los valores ingresados por el usuario como condiciones iniciales
         y0 = [C_O2, X, S, V]
@@ -86,33 +73,31 @@ def simulate():
     # Convertir los valores de O2 disuelto de mg/L a porcentaje de saturación
     O2_saturacion = (sol[:, 0] / C_O2_star) * 100
 
-    # Guardar los resultados actuales
-    datos_guardados['tiempo'] += t.tolist()
-    datos_guardados['O2'] += O2_saturacion.tolist()
-    datos_guardados['biomasa'] += sol[:, 1].tolist()
-    datos_guardados['sustrato'] += sol[:, 2].tolist()
-    datos_guardados['volumen'] += sol[:, 3].tolist()
+    # Guardar los valores finales de la simulación
+    valores_finales['O2'] = sol[-1, 0]
+    valores_finales['biomasa'] = sol[-1, 1]
+    valores_finales['sustrato'] = sol[-1, 2]
+    valores_finales['volumen'] = sol[-1, 3]
 
     # Devolver los resultados como JSON
     resultados = {
-        'tiempo': datos_guardados['tiempo'],
-        'O2': datos_guardados['O2'],
-        'biomasa': datos_guardados['biomasa'],
-        'sustrato': datos_guardados['sustrato'],
-        'volumen': datos_guardados['volumen']
+        'tiempo': t.tolist(),
+        'O2': O2_saturacion.tolist(),
+        'biomasa': sol[:, 1].tolist(),
+        'sustrato': sol[:, 2].tolist(),
+        'volumen': sol[:, 3].tolist()
     }
     return jsonify(resultados)
 
-# Ruta para resetear los datos
+# Ruta para resetear los valores finales
 @app.route('/reset', methods=['POST'])
 def reset_simulation():
-    global datos_guardados
-    datos_guardados = {
-        'tiempo': [],
-        'O2': [],
-        'biomasa': [],
-        'sustrato': [],
-        'volumen': []
+    global valores_finales
+    valores_finales = {
+        'O2': None,
+        'biomasa': None,
+        'sustrato': None,
+        'volumen': None
     }
     return jsonify({'status': 'reset'})
 
