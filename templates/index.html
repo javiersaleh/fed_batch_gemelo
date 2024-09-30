@@ -76,25 +76,29 @@
                                 label: 'O2 Disuelto (% Saturación)',
                                 data: data.O2,
                                 borderColor: 'rgba(75, 192, 192, 1)',
-                                fill: false
+                                fill: false,
+                                yAxisID: 'y2'  // Asignar este dataset al eje Y derecho
                             },
                             {
                                 label: 'Biomasa (g/L)',
                                 data: data.biomasa,
                                 borderColor: 'rgba(0, 128, 0, 1)',
-                                fill: false
+                                fill: false,
+                                yAxisID: 'y1'  // Asignar este dataset al eje Y izquierdo
                             },
                             {
                                 label: 'Sustrato (g/L)',
                                 data: data.sustrato,
                                 borderColor: 'rgba(255, 165, 0, 1)',
-                                fill: false
+                                fill: false,
+                                yAxisID: 'y1'  // Asignar este dataset al eje Y izquierdo
                             },
                             {
                                 label: 'Volumen (L)',
                                 data: data.volumen,
                                 borderColor: 'rgba(255, 0, 0, 1)',
-                                fill: false
+                                fill: false,
+                                yAxisID: 'y1'  // Asignar este dataset al eje Y izquierdo
                             }
                         ]
                     },
@@ -107,10 +111,23 @@
                                     text: 'Tiempo (h)'
                                 }
                             },
-                            y: {
+                            y1: {  // Eje Y izquierdo para biomasa, sustrato y volumen
+                                type: 'linear',
+                                position: 'left',
                                 title: {
                                     display: true,
                                     text: 'Concentración / Volumen'
+                                }
+                            },
+                            y2: {  // Eje Y derecho para O2 disuelto
+                                type: 'linear',
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'O2 Disuelto (% Saturación)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false  // Evita superposición de líneas de cuadrícula
                                 }
                             }
                         }
