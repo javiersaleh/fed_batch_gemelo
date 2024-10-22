@@ -61,7 +61,7 @@ def simulate():
     # Si hay una simulación previa, NO usamos el último valor de la simulación anterior
     y0 = [C_O2, X, S, V]
 
-    t = np.linspace(tiempo_inicial, tiempo_final, 100)
+    t = np.linspace(tiempo_inicial, tiempo_final, 101)
 
     # Simulación
     sol = odeint(modelo, y0, t, args=(F, S_in))
