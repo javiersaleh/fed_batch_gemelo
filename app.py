@@ -61,7 +61,7 @@ def simulate():
     # Si hay una simulación previa, NO usamos el último valor de la simulación anterior
     y0 = [C_O2, X, S, V]
 
-    t = np.round(np.linspace(tiempo_inicial, tiempo_final, int((tiempo_final - tiempo_inicial)) * 10 + 1.0), 2)
+    t = np.round(np.linspace(tiempo_inicial, tiempo_final, int((tiempo_final - tiempo_inicial) * 10 + 1.0), 2))
 
     # Simulación
     sol = odeint(modelo, y0, t, args=(F, S_in))
